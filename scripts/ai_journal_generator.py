@@ -60,6 +60,12 @@ class AIJournalGenerator:
         self.cursor_chats_dir = self.cursor_dir / "chats"
         self.cursor_tracking_db = self.cursor_dir / "ai-tracking" / "ai-code-tracking.db"
         
+        # Claude Code paths
+        self.claude_dir = Path.home() / ".claude"
+        self.claude_projects_dir = self.claude_dir / "projects"
+        self.claude_todos_dir = self.claude_dir / "todos"
+        self.claude_plans_dir = self.claude_dir / "plans"
+        
     def _load_config(self, config_path: str) -> Dict:
         """Load configuration from JSON file."""
         script_dir = Path(__file__).parent.parent
@@ -276,12 +282,150 @@ class AIJournalGenerator:
         
         return chats
     
+    def get_claude_code_conversations(self, target_date: str) -> List[Dict]:
+        """Get Claude Code conversation history from project JSONL files."""
+        if not self.claude_projects_dir.exists() or not self.config.get("use_cursor_logs", True):
+            return []
+        
+        conversations = []
+        target_dt = datetime.strptime(target_date, "%Y-%m-%d")
+        
+        try:
+            # Find all JSONL files in project directories
+            for project_dir in self.claude_projects_dir.iterdir():
+                if not project_dir.is_dir():
+                    continue
+                
+                for jsonl_file in project_dir.glob("*.jsonl"):
+                    try:
+                        # Check file modification time
+                        mtime = datetime.fromtimestamp(jsonl_file.stat().st_mtime)
+                        if mtime.date() != target_dt.date():
+                            continue
+                        
+                        # Read JSONL file (each line is a JSON object)
+                        with open(jsonl_file, 'r') as f:
+                            lines = f.readlines()
+                        
+                        # Extract user messages and assistant responses
+                        user_messages = []
+                        assistant_responses = []
+                        
+                        for line in lines:
+                            try:
+                                entry = json.loads(line.strip())
+                                
+                                # Check timestamp
+                                if 'timestamp' in entry:
+                                    entry_dt = datetime.fromisoformat(entry['timestamp'].replace('Z', '+00:00'))
+                                    if entry_dt.date() != target_dt.date():
+                                        continue
+                                
+                                # Extract user messages
+                                if entry.get('type') == 'user' and 'message' in entry:
+                                    msg = entry['message']
+                                    if isinstance(msg, dict) and 'content' in msg:
+                                        content = msg['content']
+                                        if isinstance(content, str):
+                                            user_messages.append(content[:500])  # First 500 chars
+                                
+                                # Extract assistant responses
+                                if entry.get('type') == 'assistant' and 'message' in entry:
+                                    msg = entry['message']
+                                    if isinstance(msg, dict) and 'content' in msg:
+                                        content = msg['content']
+                                        if isinstance(content, list):
+                                            for item in content:
+                                                if isinstance(item, dict) and item.get('type') == 'text':
+                                                    assistant_responses.append(item.get('text', '')[:500])
+                                        elif isinstance(content, str):
+                                            assistant_responses.append(content[:500])
+                                
+                            except (json.JSONDecodeError, KeyError):
+                                continue
+                        
+                        if user_messages or assistant_responses:
+                            conversations.append({
+                                'project': project_dir.name,
+                                'file': jsonl_file.name,
+                                'user_messages': user_messages[:10],  # Limit to 10
+                                'assistant_responses': assistant_responses[:10],
+                                'message_count': len(user_messages) + len(assistant_responses)
+                            })
+                    
+                    except Exception as e:
+                        print(f"⚠️  Error reading Claude Code file {jsonl_file}: {e}")
+        
+        except Exception as e:
+            print(f"⚠️  Error reading Claude Code conversations: {e}")
+        
+        return conversations
+    
+    def get_claude_code_todos(self, target_date: str) -> List[Dict]:
+        """Get Claude Code todos for the date."""
+        if not self.claude_todos_dir.exists():
+            return []
+        
+        todos = []
+        target_dt = datetime.strptime(target_date, "%Y-%m-%d")
+        
+        for todo_file in self.claude_todos_dir.glob("*.json"):
+            try:
+                mtime = datetime.fromtimestamp(todo_file.stat().st_mtime)
+                if mtime.date() == target_dt.date():
+                    content = json.loads(todo_file.read_text())
+                    if isinstance(content, list):
+                        todos.append({
+                            'file': todo_file.name,
+                            'todos': content,
+                            'modified': mtime.isoformat()
+                        })
+            except Exception as e:
+                print(f"⚠️  Error reading Claude Code todo {todo_file}: {e}")
+        
+        return todos
+    
+    def get_claude_code_plans(self, target_date: str) -> List[Dict]:
+        """Get Claude Code plan files for the date."""
+        if not self.claude_plans_dir.exists():
+            return []
+        
+        plans = []
+        target_dt = datetime.strptime(target_date, "%Y-%m-%d")
+        
+        for plan_file in self.claude_plans_dir.glob("*.md"):
+            try:
+                mtime = datetime.fromtimestamp(plan_file.stat().st_mtime)
+                if mtime.date() == target_dt.date():
+                    content = plan_file.read_text()
+                    plans.append({
+                        'file': plan_file.name,
+                        'path': str(plan_file),
+                        'content': content[:2000],
+                        'modified': mtime.isoformat()
+                    })
+            except Exception as e:
+                print(f"⚠️  Error reading Claude Code plan {plan_file}: {e}")
+        
+        return plans
+    
     def generate_ai_journal_entry(self, target_date: str, commits: List[Dict], 
-                                  plans: List[Dict], cursor_activity: Dict) -> str:
+                                  plans: List[Dict], cursor_activity: Dict,
+                                  claude_conversations: List[Dict] = None,
+                                  claude_todos: List[Dict] = None,
+                                  claude_plans: List[Dict] = None) -> str:
         """Use AI to generate a natural language journal entry."""
         
+        # Get Claude Code data
+        claude_conversations = self.get_claude_code_conversations(target_date)
+        claude_todos = self.get_claude_code_todos(target_date)
+        claude_plans = self.get_claude_code_plans(target_date)
+        
         # Prepare context for AI
-        context = self._prepare_ai_context(target_date, commits, plans, cursor_activity)
+        context = self._prepare_ai_context(
+            target_date, commits, plans, cursor_activity,
+            claude_conversations, claude_todos, claude_plans
+        )
         
         # Create the prompt
         prompt = self._create_journal_prompt(context)
@@ -293,7 +437,10 @@ class AIJournalGenerator:
             return self._call_openai(prompt)
     
     def _prepare_ai_context(self, target_date: str, commits: List[Dict], 
-                           plans: List[Dict], cursor_activity: Dict) -> Dict:
+                           plans: List[Dict], cursor_activity: Dict,
+                           claude_conversations: List[Dict] = None,
+                           claude_todos: List[Dict] = None,
+                           claude_plans: List[Dict] = None) -> Dict:
         """Prepare structured context for AI."""
         
         # Group commits by repo
@@ -311,6 +458,9 @@ class AIJournalGenerator:
             'total_commits': len(commits),
             'cursor_plans': plans,
             'cursor_activity': cursor_activity,
+            'claude_conversations': claude_conversations or [],
+            'claude_todos': claude_todos or [],
+            'claude_plans': claude_plans or [],
             'workspace': str(self.workspace_root)
         }
     
@@ -351,6 +501,29 @@ Here's what I did today:
             prompt += f"- Generated code for {len(context['cursor_activity']['code_generated'])} files\n"
             if context['cursor_activity'].get('files_touched'):
                 prompt += f"- Files touched: {', '.join(context['cursor_activity']['files_touched'][:10])}\n"
+        
+        # Add Claude Code conversations
+        if context.get('claude_conversations'):
+            prompt += f"\n## Claude Code Conversations ({len(context['claude_conversations'])} sessions)\n\n"
+            for conv in context['claude_conversations'][:3]:
+                prompt += f"- {conv['project']}: {conv['message_count']} messages\n"
+                if conv.get('user_messages'):
+                    prompt += f"  Recent: {conv['user_messages'][0][:200]}...\n"
+        
+        # Add Claude Code todos
+        if context.get('claude_todos'):
+            prompt += f"\n## Claude Code Todos ({len(context['claude_todos'])} active)\n\n"
+            for todo_group in context['claude_todos'][:3]:
+                for todo in todo_group.get('todos', [])[:5]:
+                    status = todo.get('status', 'unknown')
+                    content = todo.get('content', '')[:200]
+                    prompt += f"- [{status}] {content}\n"
+        
+        # Add Claude Code plans
+        if context.get('claude_plans'):
+            prompt += f"\n## Claude Code Plans ({len(context['claude_plans'])} active)\n\n"
+            for plan in context['claude_plans'][:3]:
+                prompt += f"- {plan['file']}: {plan['content'][:300]}...\n"
         
         prompt += """
 
@@ -467,9 +640,19 @@ Write the journal entry now:"""
         cursor_activity = self.get_cursor_activity(target_date)
         print(f"✅ Analyzed Cursor activity")
         
+        # Get Claude Code data
+        claude_conversations = self.get_claude_code_conversations(target_date)
+        claude_todos = self.get_claude_code_todos(target_date)
+        claude_plans = self.get_claude_code_plans(target_date)
+        if claude_conversations or claude_todos or claude_plans:
+            print(f"✅ Found Claude Code data: {len(claude_conversations)} conversations, {len(claude_todos)} todos, {len(claude_plans)} plans")
+        
         # Generate AI journal entry
         print("🤖 Generating natural language journal entry...")
-        journal_entry = self.generate_ai_journal_entry(target_date, all_commits, plans, cursor_activity)
+        journal_entry = self.generate_ai_journal_entry(
+            target_date, all_commits, plans, cursor_activity,
+            claude_conversations, claude_todos, claude_plans
+        )
         
         # Format final output
         return self._format_journal(target_date, journal_entry, all_commits, plans, cursor_activity)
