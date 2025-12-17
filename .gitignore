@@ -2,7 +2,9 @@
 output/
 *.md
 !README.md
+!QUICKSTART.md
 !prompts/*.md
+!bin/README.md
 
 # Cache
 config/.last_run
