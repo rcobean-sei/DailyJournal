@@ -1,0 +1,181 @@
+# DailyJournal
+
+Automated daily work summary generator for Cursor-based development. Generates structured summaries of your work across all projects by analyzing git commits, Cursor plan files, and file modifications.
+
+## Features
+
+- 🎯 **Token-Optimized**: Uses incremental updates, git log analysis, and targeted queries
+- 📊 **Multi-Project**: Automatically discovers and summarizes work across all git repos
+- 📝 **Structured Output**: Generates markdown summaries with commit details, file changes, and statistics
+- 🔄 **Incremental**: Only processes new work since last run
+- ⚡ **Fast**: Prioritizes cheap operations (git logs) over expensive ones (file reads)
+
+## Token Optimization Strategies
+
+1. **Git-First Approach**: Query git logs before file system scans (cheap metadata)
+2. **Incremental Processing**: Cache last run timestamp, only process new work
+3. **Targeted Queries**: Use file modification times to narrow scope
+4. **Batch Operations**: Group similar queries together
+5. **Lazy File Reading**: Only read files when necessary for context
+
+## Installation
+
+### Quick Install
+
+```bash
+cd DailyJournal
+./install.sh
+```
+
+This will:
+1. Install Python dependencies
+2. Make scripts executable
+3. Optionally add to your PATH
+
+### Manual Install
+
+```bash
+# Install dependencies
+pip install -r requirements.txt
+
+# Make scripts executable
+./setup.sh
+```
+
+## Usage
+
+### Basic Usage (If Added to PATH)
+
+```bash
+# Generate summary for today
+daily-summary
+
+# Generate summary for specific date
+daily-summary --date 2025-12-15
+
+# Generate summary for date range
+daily-summary --start 2025-12-15 --end 2025-12-16
+```
+
+### Using with Cursor Agent
+
+```bash
+# Generate context for Cursor chat
+cursor-summary
+
+# Output as JSON for programmatic use
+cursor-summary --json
+```
+
+### Direct Usage (Without PATH)
+
+```bash
+# Using bin/ executables
+./bin/daily-summary
+./bin/cursor-summary
+
+# Or using scripts directly
+python scripts/generate_daily_summary.py
+python scripts/cursor_agent_wrapper.py
+```
+
+Then in Cursor chat, you can reference:
+```
+Based on my work today (see output/2025-12-16_summary.md), I worked on...
+```
+
+Or use the wrapper output directly in your prompt.
+
+### Configuration
+
+Edit `config/config.json` to customize:
+- Workspace root directory
+- Output directory
+- Date format
+- Projects to include/exclude
+- Git log format preferences
+
+## Project Structure
+
+```
+DailyJournal/
+├── README.md                 # This file
+├── requirements.txt          # Python dependencies
+├── setup.sh                  # Setup script
+├── install.sh                # Installation script
+├── bin/                      # Executable wrappers
+│   ├── daily-summary        # Main executable
+│   ├── cursor-summary       # Cursor wrapper executable
+│   └── README.md            # Executable documentation
+├── config/
+│   └── config.json          # Configuration file
+├── prompts/
+│   └── daily_summary_prompt.md  # Structured prompt template
+├── scripts/
+│   ├── generate_daily_summary.py  # Main script
+│   └── cursor_agent_wrapper.py    # Cursor agent wrapper
+└── output/                   # Generated summaries (gitignored)
+    └── 2025-12-16_summary.md
+```
+
+## How It Works
+
+1. **Discovery Phase**: Finds all git repositories in workspace
+2. **Git Analysis**: Extracts commits, file changes, and statistics from git logs
+3. **Cursor Integration**: Scans `.cursor/plans/` for active plans and project metadata
+4. **File System Scan**: Checks file modification times (only for non-git-tracked work)
+5. **Summary Generation**: Uses structured prompt to generate markdown summary
+6. **Caching**: Saves last run timestamp for incremental updates
+
+## Token Optimization Details
+
+### Strategy 1: Git-First Analysis
+- Git logs are text-based and fast to query
+- Provides commit messages, file changes, timestamps
+- No need to read actual file contents for most summaries
+
+### Strategy 2: Incremental Processing
+- Cache last successful run timestamp in `config/.last_run`
+- Only query git logs since last run
+- Skip unchanged projects entirely
+
+### Strategy 3: Targeted File Queries
+- Use `find` with `-mtime` to filter by modification date
+- Only read files that were actually modified
+- Prioritize reading small metadata files (configs, plans) over large source files
+
+### Strategy 4: Batch Operations
+- Group all git log queries together
+- Batch file system queries
+- Minimize subprocess calls
+
+### Strategy 5: Lazy Context Loading
+- Only read file contents when commit message is unclear
+- Cache file reads within same run
+- Use file stats (size, type) before reading
+
+## Example Output
+
+See `output/2025-12-16_summary.md` for an example of generated output.
+
+## Alternatives to Claude Memory
+
+Since Cursor doesn't have built-in memory like Claude Code, this tool provides:
+
+1. **Persistent Summaries**: Daily summaries saved to disk
+2. **Searchable History**: All summaries in one place, searchable by date/project
+3. **Incremental Context**: Script tracks what's already been summarized
+4. **Structured Data**: Markdown format easy to parse for future automation
+
+## Future Enhancements
+
+- [ ] Integration with Cursor API (if available)
+- [ ] Automatic commit message generation from summaries
+- [ ] Weekly/monthly aggregate reports
+- [ ] Project-specific templates
+- [ ] Export to various formats (JSON, HTML, PDF)
+- [ ] Integration with time tracking tools
+
+## License
+
+Internal use only.

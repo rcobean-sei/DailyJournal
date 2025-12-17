@@ -1,0 +1,32 @@
+# Output files
+output/
+*.md
+!README.md
+!prompts/*.md
+
+# Cache
+config/.last_run
+*.cache
+*.pyc
+__pycache__/
+
+# Python
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
