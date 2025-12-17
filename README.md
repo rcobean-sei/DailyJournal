@@ -4,11 +4,14 @@ Automated daily work summary generator for Cursor-based development. Generates s
 
 ## Features
 
+- 🤖 **AI-Powered Journal**: Natural language journal entries that learn from your commits and understand accomplishments
 - 🎯 **Token-Optimized**: Uses incremental updates, git log analysis, and targeted queries
 - 📊 **Multi-Project**: Automatically discovers and summarizes work across all git repos
 - 📝 **Structured Output**: Generates markdown summaries with commit details, file changes, and statistics
 - 🔄 **Incremental**: Only processes new work since last run
 - ⚡ **Fast**: Prioritizes cheap operations (git logs) over expensive ones (file reads)
+- 🧠 **Cursor Integration**: Taps into Cursor's logs, memory, and plan files to understand your work context
+- ✍️ **Natural Language**: AI transforms raw commits into personal journal entries that reflect what you actually accomplished
 
 ## Token Optimization Strategies
 
@@ -42,9 +45,48 @@ pip install -r requirements.txt
 ./setup.sh
 ```
 
+### AI Setup (Required for AI Journal)
+
+The AI-powered journal requires an API key. Choose one:
+
+**Option 1: Anthropic Claude (Recommended)**
+```bash
+export ANTHROPIC_API_KEY="your-api-key-here"
+```
+
+**Option 2: OpenAI**
+```bash
+export OPENAI_API_KEY="your-api-key-here"
+```
+
+You can also add these to your `~/.zshrc` or `~/.bashrc` to make them permanent.
+
 ## Usage
 
-### Basic Usage (If Added to PATH)
+### AI-Powered Journal (Recommended)
+
+Generate natural language journal entries that learn from your work:
+
+```bash
+# Generate AI journal for today
+daily-journal
+
+# Generate for specific date
+daily-journal --date 2025-12-15
+
+# Generate for date range
+daily-journal --start 2025-12-15 --end 2025-12-16
+```
+
+The AI journal:
+- ✍️ Writes in natural, personal language
+- 🧠 Learns from commit patterns to understand accomplishments
+- 📝 Connects your work to goals and achievements
+- 🔗 Integrates with Cursor's logs, memory, and plans
+
+### Technical Summary (Non-AI)
+
+For structured, technical summaries:
 
 ```bash
 # Generate summary for today
@@ -70,11 +112,17 @@ cursor-summary --json
 ### Direct Usage (Without PATH)
 
 ```bash
-# Using bin/ executables
+# AI Journal
+./bin/daily-journal
+
+# Technical Summary
 ./bin/daily-summary
+
+# Cursor Wrapper
 ./bin/cursor-summary
 
 # Or using scripts directly
+python scripts/ai_journal_generator.py
 python scripts/generate_daily_summary.py
 python scripts/cursor_agent_wrapper.py
 ```
@@ -119,6 +167,22 @@ DailyJournal/
 ```
 
 ## How It Works
+
+### AI Journal Mode (`daily-journal`)
+
+1. **Discovery Phase**: Finds all git repositories in workspace
+2. **Git Analysis**: Extracts commits, file changes, and statistics from git logs
+3. **Cursor Integration**: 
+   - Scans `.cursor/plans/` for active plans and project metadata
+   - Reads Cursor's AI tracking database to see what code was generated
+   - Analyzes chat history for context (optional)
+4. **AI Processing**: Uses Claude/OpenAI to:
+   - Understand what you actually accomplished (not just commits)
+   - Learn from commit patterns to infer the bigger picture
+   - Generate natural, personal journal entries
+5. **Journal Generation**: Creates a reflective journal entry in first person
+
+### Technical Summary Mode (`daily-summary`)
 
 1. **Discovery Phase**: Finds all git repositories in workspace
 2. **Git Analysis**: Extracts commits, file changes, and statistics from git logs

@@ -4,9 +4,32 @@ This directory contains executable wrappers for the DailyJournal scripts.
 
 ## Available Commands
 
+### `daily-journal` (AI-Powered) ⭐ Recommended
+
+Generate natural language journal entries that learn from your work and understand accomplishments.
+
+```bash
+# Generate AI journal for today
+daily-journal
+
+# Generate for specific date
+daily-journal --date 2025-12-15
+
+# Generate for date range
+daily-journal --start 2025-12-15 --end 2025-12-16
+```
+
+**Features:**
+- Natural, personal language (first person)
+- Learns from commit patterns to understand accomplishments
+- Integrates with Cursor's logs, memory, and plans
+- Connects work to goals and achievements
+
+**Requires:** `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` environment variable
+
 ### `daily-summary`
 
-Generate daily work summary from git commits and Cursor plans.
+Generate technical daily work summary from git commits and Cursor plans.
 
 ```bash
 # Generate summary for today

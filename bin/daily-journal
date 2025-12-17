@@ -1,0 +1,18 @@
+#!/usr/bin/env python3
+"""
+DailyJournal - AI-powered daily journal generator
+Natural language journal entries that learn from your work
+"""
+
+import sys
+from pathlib import Path
+
+# Add scripts directory to path
+scripts_dir = Path(__file__).parent.parent / "scripts"
+sys.path.insert(0, str(scripts_dir))
+
+# Import and run main
+from ai_journal_generator import main
+
+if __name__ == "__main__":
+    main()
