@@ -3,6 +3,7 @@ output/
 *.md
 !README.md
 !QUICKSTART.md
+!AI_MODELS.md
 !prompts/*.md
 !bin/README.md
 
