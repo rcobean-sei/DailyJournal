@@ -72,7 +72,7 @@ class AIJournalGenerator:
         
         # Add AI defaults
         config.setdefault("ai_provider", "anthropic")  # or "openai"
-        config.setdefault("ai_model", "claude-3-5-sonnet-20241022")
+        config.setdefault("ai_model", "claude-3-haiku-20240307")  # Cheapest option that works well
         config.setdefault("ai_temperature", 0.7)
         config.setdefault("use_cursor_logs", True)
         config.setdefault("use_cursor_memory", True)
@@ -371,7 +371,7 @@ Write the journal entry now:"""
     
     def _call_anthropic(self, prompt: str) -> str:
         """Call Anthropic Claude API."""
-        model = self.config.get("ai_model", "claude-3-5-sonnet-20241022")
+        model = self.config.get("ai_model", "claude-3-haiku-20240307")
         
         message = self.ai_client.messages.create(
             model=model,
