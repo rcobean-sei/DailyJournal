@@ -92,12 +92,13 @@ For a typical daily journal entry:
 
 ## Recommendation
 
-**For this task, use GPT-4o-mini or Claude 3 Haiku** - Both are excellent choices:
+**For this task, use GPT-5 mini** - Latest generation with excellent value:
 
-- **GPT-4o-mini**: Cheapest quality option ($0.0005/day)
-- **Claude 3 Haiku**: Currently set as default, great quality ($0.0009/day)
+- **GPT-5 mini**: Latest GPT generation, best value for latest models ($0.0015/day)
+- **GPT-4o-mini**: Cheapest quality option ($0.0005/day) - use if cost is primary concern
+- **Claude 3 Haiku**: Great Anthropic option ($0.0009/day) - use if you prefer Anthropic
 
-The task (transforming commits into natural language journal entries) doesn't require the most advanced reasoning, so these models are perfect. At these prices, you could generate 1,000 journal entries for less than $1!
+**Current default: GPT-5 mini** - Latest generation capabilities at reasonable cost. At these prices, you could generate 1,000 journal entries for less than $1!
 
 ## How to Change Models
 
