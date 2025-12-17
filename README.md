@@ -49,17 +49,19 @@ pip install -r requirements.txt
 
 The AI-powered journal requires an API key. Choose one:
 
-**Option 1: Anthropic Claude (Recommended)**
+**Option 1: OpenAI (Default - GPT-5 mini)**
+```bash
+export DAILYJOURNAL_OPENAI_API_KEY="your-api-key-here"
+```
+
+**Option 2: Anthropic Claude**
 ```bash
 export ANTHROPIC_API_KEY="your-api-key-here"
 ```
 
-**Option 2: OpenAI**
-```bash
-export OPENAI_API_KEY="your-api-key-here"
-```
-
 You can also add these to your `~/.zshrc` or `~/.bashrc` to make them permanent.
+
+**Note:** The code will also check for `OPENAI_API_KEY` as a fallback if `DAILYJOURNAL_OPENAI_API_KEY` is not set.
 
 ## Usage
 

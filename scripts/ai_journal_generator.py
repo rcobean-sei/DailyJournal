@@ -81,7 +81,7 @@ class AIJournalGenerator:
     
     def _setup_ai_client(self):
         """Setup AI client based on config."""
-        provider = self.config.get("ai_provider", "anthropic")
+        provider = self.config.get("ai_provider", "openai")
         
         if provider == "anthropic" and HAS_ANTHROPIC:
             api_key = os.getenv("ANTHROPIC_API_KEY") or self.config.get("anthropic_api_key")
@@ -90,9 +90,15 @@ class AIJournalGenerator:
             return anthropic.Anthropic(api_key=api_key)
         
         elif provider == "openai" and HAS_OPENAI:
-            api_key = os.getenv("OPENAI_API_KEY") or self.config.get("openai_api_key")
+            # Check for DailyJournal-specific key first, then fallback to standard key
+            api_key = (os.getenv("DAILYJOURNAL_OPENAI_API_KEY") or 
+                      os.getenv("OPENAI_API_KEY") or 
+                      self.config.get("openai_api_key"))
             if not api_key:
-                raise ValueError("OPENAI_API_KEY not found. Set it in environment or config.")
+                raise ValueError(
+                    "OpenAI API key not found. Set DAILYJOURNAL_OPENAI_API_KEY or OPENAI_API_KEY "
+                    "in environment, or openai_api_key in config."
+                )
             return openai.OpenAI(api_key=api_key)
         
         else:
