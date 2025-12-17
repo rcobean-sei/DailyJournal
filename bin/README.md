@@ -25,7 +25,7 @@ daily-journal --start 2025-12-15 --end 2025-12-16
 - Integrates with Cursor's logs, memory, and plans
 - Connects work to goals and achievements
 
-**Requires:** `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` environment variable
+**Requires:** `DAILYJOURNAL_OPENAI_API_KEY` (or `OPENAI_API_KEY`) or `ANTHROPIC_API_KEY` environment variable
 
 ### `daily-summary`
 
